@@ -10,9 +10,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from openai import OpenAI, APIError
 import uvicorn
+import logging
+import time
+from fastapi import Request
 
 # Load environment variables
 load_dotenv()
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
+
+logger = logging.getLogger("promptbridge")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -29,6 +40,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+
+    logger.info(f"Incoming {request.method} {request.url.path}")
+
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        logger.exception("Unhandled exception occurred")
+        raise exc
+
+    process_time = time.time() - start_time
+
+    logger.info(
+        f"Completed {request.method} {request.url.path} "
+        f"Status={response.status_code} "
+        f"Time={process_time:.4f}s"
+    )
+
+    return response
+
 
 # Initialize OpenAI client
 api_key = os.getenv("OPENAI_API_KEY")
@@ -100,15 +135,3 @@ def generate(request: PromptRequest):
             status_code=500,
             detail=f"Unexpected error: {str(e)}"
         )
-
-# if __name__ == "__main__":
-#     uvicorn.run(
-#         app,
-#         host="0.0.0.0",
-#         port=8000,
-#         reload=False
-#     )
-
-# if __name__ == "__main__":
-#     port = int(os.environ.get("PORT", 8000))
-#     uvicorn.run("main:app", host="0.0.0.0", port=port)
