@@ -17,8 +17,7 @@ React Frontend → Express Backend → OpenAI API → Response to UI
 ## Tech Stack
 
 - React
-- Node.js
-- Express
+- python FASTAPI
 - OpenAI SDK
 
 ## Why This Project Matters
