@@ -21,8 +21,12 @@ function App() {
     
     setLoading(true);
     try {
+      //vercel env var for backend host or localhost fallback
+      const envServer = import.meta.env.VITE_API_BASE_URL;
+      const apiUrl = envServer ? `${envServer}/api/ask` : 'http://localhost:8000/generate';
+      
       // Call backend API
-      const response = await fetch('http://localhost:8000/generate', {
+      const response = await fetch( apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
